@@ -1,0 +1,18 @@
+* {
+    font-family: "Helvetica", sans-serif;
+}
+
+
+.title{
+    font-size: 3em;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.books-title {
+    font-size: 2em;
+    font-weight: 600;
+    color: #424242;
+    max-width: 100%;
+}
+

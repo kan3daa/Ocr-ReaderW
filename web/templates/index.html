@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <title>Inventaire Livres</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1 id="title">Chargement...</h1>
+    <div id="books-container">Chargement...</div>
+    
+    <script>
+    async function refreshBooks() {
+        try {
+            const res = await fetch('/api/books');
+            const books = await res.json();
+            
+            document.getElementById('title').textContent = `Nos livres (${books.length})`;
+            
+            let html = '';
+            books.forEach(book => {
+                html += `
+                    <div class="book-item">
+                        <img src="${book.couverture}" class="book-cover" 
+                            alt="${book.titre}" 
+                            onerror="this.style.background='linear-gradient(135deg,#f5f7fa,#c3cfe2);border:2px dashed #ccc;color:#999;font-size:40px;line-height:150px;text-align:center';;this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dGV4dCB5PSI3MCIgZm9udC1zaXplPSIzMCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+PC90ZXh0Pjwvc3ZnPg=='">
+                        <div class="book-info">
+                            <h2>${book.titre}</h2>
+                            <p>${book.auteur}</p>
+                            <p>${book.scan_count || 1}x • ${book.isbn}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('books-container').innerHTML = html || '<p style="text-align:center;color:#999">Aucun livre</p>';
+        } catch(e) {
+            document.getElementById('books-container').innerHTML = '<p style="color:red">Erreur API</p>';
+            console.error(e);
+        }
+    }
+    
+    refreshBooks();
+    setInterval(refreshBooks, 5000);
+    </script>
+</body>
+</html>

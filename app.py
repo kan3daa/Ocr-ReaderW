@@ -4,4 +4,3 @@ import pyzbar.pyzbar as pyzbar
 import numpy as np
 
 run_detector()
-    

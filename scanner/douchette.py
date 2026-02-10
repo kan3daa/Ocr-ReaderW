@@ -1,10 +1,11 @@
 import re
 import sys
-from services.books_api import get_book_info
-
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)) + '/db')
+from database import save_scan, init_db
+from scanner.handlers import handle_isbn
 
 class DouchetteScanner:
-    
     AZERTY_TO_DIGIT = {
         'ç':'9','è':'7','_':'8','é':'2','"':'3',
         '&':'1','(':'5',"'" : '4', '-' : '6','à':'0'
@@ -21,37 +22,26 @@ class DouchetteScanner:
         ).strip()
 
     def scan_once(self):
-        # Lecture de l'input
         raw = input("Scannez / entrez un ISBN : ")
         if not raw:
-            print(" Entrée vide")
+            print("Entrée vide")
             return
         
-        # Nettoyage et conversion AZERTY → chiffres
         cleaned = self.clean_input(raw)
         isbn = self.azerty_to_isbn(cleaned)
-
         print(f"ISBN décodé : '{isbn}'")
-        
-        # Vérification et récupération des infos
-        if len(isbn) == 13 and isbn.isdigit():
-            book = get_book_info(isbn)
-            print(f"{book.get('titre','N/A')} - {book.get('auteur','N/A')} - {book.get('edition', book.get('Édition','N/A'))}")
-            return book
-        
-        print("ISBN invalide")
 
+        # Ici on délègue:
+        return handle_isbn(isbn)
 
 def main():
     scanner = DouchetteScanner()
-
     while True:
         try:
             scanner.scan_once()
         except KeyboardInterrupt:
             print("\nArrêt du programme.")
             sys.exit(0)
-
 
 if __name__ == "__main__":
     main()

@@ -33,7 +33,7 @@ while True:
         
         for code in codes:
             if not DetectorService().scan(code):
-                continue  # ignorer les codes invalides
+                continue
             
             info = get_book_info(code)
             print(f"NOUVEAU scan: {info.get('titre', 'N/A')}")
