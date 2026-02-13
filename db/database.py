@@ -25,12 +25,25 @@ def init_db():
 def save_scan(isbn, info):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+
     c.execute('''
-        INSERT OR REPLACE INTO books 
-        (isbn, titre, auteur, edition, scan_date, scan_count)
-        VALUES (?, ?, ?, ?, DATE('now'), 
-                COALESCE((SELECT scan_count+1 FROM books WHERE isbn=?), 1))
-    ''', (isbn, info['titre'], info['auteur'], info.get('edition',''), isbn))
+        INSERT INTO books (isbn, titre, auteur, edition, scan_date, scan_count)
+        VALUES (?, ?, ?, ?, DATE('now'), 1)
+        ON CONFLICT(isbn) DO UPDATE SET
+            titre = excluded.titre,
+            auteur = excluded.auteur,
+            edition = excluded.edition,
+            scan_date = DATE('now'),
+            scan_count = books.scan_count + 1
+    ''', (
+        isbn,
+        info['titre'],
+        info['auteur'],
+        info.get('edition', '')
+    ))
+
     conn.commit()
     conn.close()
+
     print(f" {info['titre'][:30]}...")
+

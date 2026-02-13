@@ -1,24 +1,40 @@
 from flask import Flask, render_template, jsonify
-import sqlite3, pandas as pd, sys, os
+import sqlite3
+import pandas as pd
+import sys, os
+
+
+
+# Ajout du chemin vers services pour books_api
+sys.path.insert(0, os.path.abspath('../services'))
+from books_api import get_book_info
+
+# Chemin vers ta base SQLite
 sys.path.insert(0, '../db')
 from database import DB_PATH
 
 app = Flask(__name__, template_folder='templates')
 
 def get_placeholder_cover(isbn):
-    return f"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjE4MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjNjk2OTZGIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPknyvZ09hdXRoZXI8L3RleHQ+PC9zdmc+"
+    """Image par défaut si aucune couverture disponible."""
+    return (
+        '/static/default-cover.png'
+    )
 
 @app.route('/')
 def index():
-    # ENVOIE LIVRES pour index.html
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql("SELECT * FROM books ORDER BY scan_date DESC LIMIT 20", conn)
     conn.close()
     books = df.to_dict('records')
+
+    # Complète les couvertures manquantes
     for book in books:
         if not book.get('couverture'):
-            book['couverture'] = get_placeholder_cover(book['isbn'])
-    return render_template('index.html', books=books)  # ← AJOUT books
+            info = get_book_info(book['isbn'])
+            book['couverture'] = info['couverture'] or get_placeholder_cover(book['isbn'])
+
+    return render_template('index.html', books=books)
 
 @app.route('/api/books')
 def api_books():
@@ -26,9 +42,12 @@ def api_books():
     df = pd.read_sql("SELECT * FROM books ORDER BY scan_date DESC LIMIT 100", conn)
     conn.close()
     books = df.to_dict('records')
+
     for book in books:
         if not book.get('couverture'):
-            book['couverture'] = get_placeholder_cover(book['isbn'])
+            info = get_book_info(book['isbn'])
+            book['couverture'] = info['couverture'] or get_placeholder_cover(book['isbn'])
+
     return jsonify(books)
 
 if __name__ == '__main__':

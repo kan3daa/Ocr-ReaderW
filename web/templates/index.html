@@ -1,90 +1,75 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <title>Book Inventory</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Inventory</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
-
 <body>
     <h1 id="title">Chargement...</h1>
     <div id="books-container">Chargement...</div>
+
     <script>
-    // Simple HTML escape to prevent XSS
+    // -------------------------
+    // UTILITAIRES
+    // -------------------------
     function escapeHTML(str) {
         if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 
-    return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-    // Default cover if missing
     function defaultCover() {
         return '/static/default-cover.png';
     }
 
+    // -------------------------
+    // RAFRAÎCHISSEMENT LIVRES
+    // -------------------------
     async function refreshBooks() {
         try {
-        const res = await fetch('/api/books');
-        const books = await res.json();
+            const res = await fetch('/api/books');
+            const books = await res.json();
 
-        // Update title with number of books
-        document.getElementById('title').textContent =
-        `Nos livres (${books.length})`;
+            document.getElementById('title').textContent = `Nos livres (${books.length})`;
 
-        let html = '';
+            let html = '';
 
-        books.forEach(book => {
-            const couverture = book.couverture
-            ? book.couverture
-            : defaultCover();
+            books.forEach(book => {
+                const couverture = book.couverture || defaultCover();
 
-        const titre = escapeHTML(book.titre);
-        const auteur = escapeHTML(book.auteur);
-        const edition = escapeHTML(book.edition);
-        const isbn = escapeHTML(book.isbn);
-        const scanCount = escapeHTML(String(book.scan_count || 1));
+                html += `
+                    <div class="book-item">
+                        <img src="${couverture}" 
+                            alt="${escapeHTML(book.titre)}" 
+                            width="120" height="180"
+                            onerror="this.src='${defaultCover()}'">
+                        <div class="book-info">
+                            <h2>${escapeHTML(book.titre)}</h2>
+                            <p>${escapeHTML(book.auteur)}</p>
+                            <p>${escapeHTML(String(book.scan_count || 1))}x • ${escapeHTML(book.isbn)}</p>
+                        </div>
+                    </div>
+                `;
+            });
 
-        html += `
-        <div class="book-item">
-            <img
-                src="${couverture}"
-                alt="${titre}"
-                width="120"
-                height="180"
-            >
+            document.getElementById('books-container').innerHTML =
+                html || '<p style="text-align:center;color:#999">Aucun livre</p>';
 
-            <div class="book-info">
-                <h2>${titre}</h2>
-                <p>${auteur}</p>
-                <p>${scanCount}x • ${isbn}</p>
-            </div>
-            </div>
-        `;
-        });
-
-        document.getElementById('books-container').innerHTML =
-        html || '<p style="text-align:center;color:#999">No books</p>';
-
-    } catch (e) {
-
-        document.getElementById('books-container').innerHTML =
-        '<p style="color:red">API error</p>';
-
-        console.error(e);
-    }
+        } catch (err) {
+            document.getElementById('books-container').innerHTML =
+                '<p style="color:red;text-align:center">Erreur API</p>';
+            console.error(err);
+        }
     }
 
     refreshBooks();
-
-    // Refresh every 5 seconds
     setInterval(refreshBooks, 5000);
-</script>
-
+    </script>
 </body>
 </html>
